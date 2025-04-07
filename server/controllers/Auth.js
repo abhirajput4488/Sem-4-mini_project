@@ -10,7 +10,7 @@ require("dotenv").config()
 
 // Signup Controller for Registering USers
 
-exports.signup = async (req, res) => {
+exports.signup = async (req, res) => { //✅
   try {
     // Destructure fields from the request body
     const {
@@ -95,7 +95,7 @@ exports.signup = async (req, res) => {
       accountType: accountType,
       approved: approved,
       additionalDetails: profileDetails._id,
-      image: "",
+      image: `https://api.dicebear.com/5.x/initials/svg?seed=${firstName} ${lastName}`,
     })
 
     return res.status(200).json({
@@ -113,7 +113,7 @@ exports.signup = async (req, res) => {
 }
 
 // Login controller for authenticating users
-exports.login = async (req, res) => {
+exports.login = async (req, res) => {//✅
   try {
     // Get email and password from request body
     const { email, password } = req.body
@@ -179,7 +179,7 @@ exports.login = async (req, res) => {
   }
 }
 // Send OTP For Email Verification
-exports.sendotp = async (req, res) => {
+exports.sendotp = async (req, res) => {//✅
   try {
     const { email } = req.body
 
