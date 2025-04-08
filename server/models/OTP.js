@@ -1,10 +1,17 @@
 const mongoose = require("mongoose");
 const mailSender = require("../utils/mailSender");
 const emailTemplate = require("../mail/templates/emailVerificationTemplate");
+
 const OTPSchema = new mongoose.Schema({
 	email: {
 		type: String,
-		required: true,
+		required: [true, "Email is required"],
+		validate: {
+			validator: function(v) {
+				return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+			},
+			message: props => `${props.value} is not a valid email address!`
+		}
 	},
 	otp: {
 		type: String,
@@ -19,18 +26,18 @@ const OTPSchema = new mongoose.Schema({
 
 // Define a function to send emails
 async function sendVerificationEmail(email, otp) {
-	// Create a transporter to send emails
-
-	// Define the email options
-
-	// Send the email
+	if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+		console.error("Invalid email address:", email);
+		throw new Error("Invalid email address");
+	}
+	
 	try {
 		const mailResponse = await mailSender(
 			email,
 			"Verification Email",
 			emailTemplate(otp)
 		);
-		console.log("Email sent successfully: ", mailResponse.response);
+		console.log("Email sent successfully: ", mailResponse);
 	} catch (error) {
 		console.log("Error occurred while sending email: ", error);
 		throw error;
@@ -43,9 +50,15 @@ OTPSchema.pre("save", async function (next) {
 
 	// Only send an email when a new document is created
 	if (this.isNew) {
-		await sendVerificationEmail(this.email, this.otp);
+		try {
+			await sendVerificationEmail(this.email, this.otp);
+			next();
+		} catch (error) {
+			next(error);
+		}
+	} else {
+		next();
 	}
-	next();
 });
 
 const OTP = mongoose.model("OTP", OTPSchema);

@@ -1,5 +1,7 @@
 const express = require("express");
 const app = express();
+const path = require("path");
+const fs = require("fs");
 
 const userRoutes = require("./routes/User");
 const profileRoutes = require("./routes/Profile");
@@ -16,6 +18,13 @@ const dotenv = require("dotenv");
 dotenv.config();
 const PORT = process.env.PORT || 4000;
 
+// Create temp directory if it doesn't exist
+const tempDir = path.join(__dirname, "tmp");
+if (!fs.existsSync(tempDir)) {
+	fs.mkdirSync(tempDir, { recursive: true });
+	console.log("Created temporary directory:", tempDir);
+}
+
 //database connect
 database.connect();
 //middlewares
@@ -23,15 +32,20 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
 	cors({
-		origin:"http://localhost:3000",
+		origin: ["http://localhost:3000", "http://localhost:3001"],
 		credentials:true,
 	})
 )
 
 app.use(
 	fileUpload({
-		useTempFiles:true,
-		tempFileDir:"/tmp",
+		useTempFiles: true,
+		tempFileDir: tempDir,
+		createParentPath: true,
+		limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max file size
+		abortOnLimit: true,
+		debug: true,
+		responseOnLimit: "File size limit has been reached"
 	})
 )
 //cloudinary connection
