@@ -116,32 +116,70 @@ exports.getAllUserDetails = async (req, res) => {
 
 exports.updateDisplayPicture = async (req, res) => {
   try {
-    const displayPicture = req.files.displayPicture
-    const userId = req.user.id
-    const image = await uploadImageToCloudinary(
-      displayPicture,
-      process.env.FOLDER_NAME,
-      1000,
-      1000
-    )
-    console.log(image)
-    const updatedProfile = await User.findByIdAndUpdate(
-      { _id: userId },
-      { image: image.secure_url },
-      { new: true }
-    )
-    res.send({
-      success: true,
-      message: `Image Updated successfully`,
-      data: updatedProfile,
-    })
+    console.log("Starting updateDisplayPicture controller");
+    console.log("Request files:", req.files);
+    
+    if (!req.files || !req.files.displayPicture) {
+      console.log("No displayPicture file found in request");
+      return res.status(400).json({
+        success: false,
+        message: "No image file provided",
+      });
+    }
+    
+    const displayPicture = req.files.displayPicture;
+    const userId = req.user.id;
+    
+    console.log("Uploading display picture for user:", userId);
+    console.log("File details:", {
+      name: displayPicture.name,
+      size: displayPicture.size,
+      mimetype: displayPicture.mimetype,
+      tempFilePath: displayPicture.tempFilePath
+    });
+    
+    try {
+      const image = await uploadImageToCloudinary(
+        displayPicture,
+        process.env.FOLDER_NAME,
+        1000,
+        1000
+      );
+      
+      console.log("Image uploaded successfully:", image.secure_url);
+      
+      const updatedProfile = await User.findByIdAndUpdate(
+        { _id: userId },
+        { image: image.secure_url },
+        { new: true }
+      );
+      
+      if (!updatedProfile) {
+        console.log("User not found with ID:", userId);
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+      
+      console.log("User profile updated successfully");
+      res.send({
+        success: true,
+        message: `Image Updated successfully`,
+        data: updatedProfile,
+      });
+    } catch (uploadError) {
+      console.error("Error during image upload or user update:", uploadError);
+      throw uploadError;
+    }
   } catch (error) {
+    console.error("Error updating display picture:", error);
     return res.status(500).json({
       success: false,
-      message: error.message,
-    })
+      message: error.message || "Failed to update display picture",
+    });
   }
-}
+};
 
 exports.getEnrolledCourses = async (req, res) => {
   try {
@@ -211,28 +249,56 @@ exports.getEnrolledCourses = async (req, res) => {
 
 exports.instructorDashboard = async (req, res) => {
   try {
-    const courseDetails = await Course.find({ instructor: req.user.id })
+    // Get the instructor's ID from the authenticated user
+    const instructorId = req.user.id;
+    
+    if (!instructorId) {
+      return res.status(400).json({
+        success: false,
+        message: "Instructor ID not found"
+      });
+    }
+
+    // Find all courses for this instructor with populated fields
+    const courseDetails = await Course.find({ instructor: instructorId })
+      .populate('studentsEnroled')
+      .lean(); // Use lean() for better performance
+
+    if (!courseDetails || courseDetails.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: []
+      });
+    }
 
     const courseData = courseDetails.map((course) => {
-      const totalStudentsEnrolled = course.studentsEnroled.length
-      const totalAmountGenerated = totalStudentsEnrolled * course.price
+      // Ensure studentsEnroled exists and is an array
+      const studentsEnroled = Array.isArray(course.studentsEnroled) ? course.studentsEnroled : [];
+      const totalStudentsEnrolled = studentsEnroled.length;
+      const price = typeof course.price === 'number' ? course.price : 0;
+      const totalAmountGenerated = totalStudentsEnrolled * price;
 
-      // Create a new object with the additional fields
-      const courseDataWithStats = {
+      return {
         _id: course._id,
-        courseName: course.courseName,
-        courseDescription: course.courseDescription,
-        // Include other course properties as needed
+        courseName: course.courseName || '',
+        courseDescription: course.courseDescription || '',
+        thumbnail: course.thumbnail || '',
+        price: price,
         totalStudentsEnrolled,
         totalAmountGenerated,
-      }
+      };
+    });
 
-      return courseDataWithStats
-    })
-
-    res.status(200).json({ courses: courseData })
+    res.status(200).json({
+      success: true,
+      data: courseData
+    });
   } catch (error) {
-    console.error(error)
-    res.status(500).json({ message: "Server Error" })
+    console.error("Error in instructorDashboard:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch instructor dashboard data",
+      error: error.message
+    });
   }
-}
+};

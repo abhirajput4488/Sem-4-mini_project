@@ -76,8 +76,10 @@ exports.signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // Create the user
-    let approved = ""
-    approved === "Instructor" ? (approved = false) : (approved = true)
+    // let approved = ""
+    // approved === "Instructor" ? (approved = false) : (approved = true)
+    let approved = accountType === "Instructor" ? false : true;
+
 
     // Create the Additional Profile For User
     const profileDetails = await Profile.create({
@@ -86,6 +88,11 @@ exports.signup = async (req, res) => {
       about: null,
       contactNumber: null,
     })
+    
+    // Generate a default avatar using DiceBear API
+    const defaultImage = `https://api.dicebear.com/5.x/initials/svg?seed=${firstName} ${lastName}`;
+    console.log("Default Image URL:", defaultImage);
+
     const user = await User.create({
       firstName,
       lastName,
@@ -95,7 +102,7 @@ exports.signup = async (req, res) => {
       accountType: accountType,
       approved: approved,
       additionalDetails: profileDetails._id,
-      image: "",
+      image: defaultImage
     })
 
     return res.status(200).json({
@@ -183,6 +190,15 @@ exports.sendotp = async (req, res) => {
   try {
     const { email } = req.body
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
+      });
+    }
+
     // Check if user is already present
     // Find user with provided email
     const checkUserPresent = await User.findOne({ email })
@@ -221,7 +237,10 @@ exports.sendotp = async (req, res) => {
     })
   } catch (error) {
     console.log(error.message)
-    return res.status(500).json({ success: false, error: error.message })
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message || "Failed to send OTP. Please try again." 
+    })
   }
 }
 
