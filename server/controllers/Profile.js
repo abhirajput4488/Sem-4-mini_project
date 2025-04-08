@@ -7,7 +7,7 @@ const { uploadImageToCloudinary } = require("../utils/imageUploader")
 const mongoose = require("mongoose")
 const { convertSecondsToDuration } = require("../utils/secToDuration")
 // Method for updating a profile
-exports.updateProfile = async (req, res) => {
+exports.updateProfile = async (req, res) => {//✅
   try {
     const {
       firstName = "",
@@ -21,22 +21,38 @@ exports.updateProfile = async (req, res) => {
 
     // Find the profile by id
     const userDetails = await User.findById(id)
+    if (!userDetails) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
     const profile = await Profile.findById(userDetails.additionalDetails)
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found",
+      });
+    }
+    // Update user fields only if provided
+    const updatedUserFields = {};
+    if (firstName) updatedUserFields.firstName = firstName;
+    if (lastName) updatedUserFields.lastName = lastName;
 
-    const user = await User.findByIdAndUpdate(id, {
-      firstName,
-      lastName,
-    })
-    await user.save()
+    if (Object.keys(updatedUserFields).length > 0) {
+      await User.findByIdAndUpdate(id, updatedUserFields, {
+        new: true,
+        runValidators: true,
+      });
+    }
 
-    // Update the profile fields
-    profile.dateOfBirth = dateOfBirth
-    profile.about = about
-    profile.contactNumber = contactNumber
-    profile.gender = gender
+     // Update profile fields only if provided
+    if (dateOfBirth) profile.dateOfBirth = dateOfBirth;
+    if (about) profile.about = about;
+    if (contactNumber) profile.contactNumber = contactNumber;
+    if (gender) profile.gender = gender;
 
-    // Save the updated profile
-    await profile.save()
+    await profile.save();
 
     // Find the updated user details
     const updatedUserDetails = await User.findById(id)
@@ -94,7 +110,8 @@ exports.deleteAccount = async (req, res) => {
   }
 }
 
-exports.getAllUserDetails = async (req, res) => {
+//contorller for getting user  all details
+exports.getAllUserDetails = async (req, res) => {//✅
   try {
     const id = req.user.id
     const userDetails = await User.findById(id)
@@ -114,64 +131,37 @@ exports.getAllUserDetails = async (req, res) => {
   }
 }
 
-exports.updateDisplayPicture = async (req, res) => {
+exports.updateDisplayPicture = async (req, res) => {//✅
   try {
-    console.log("Starting updateDisplayPicture controller");
-    console.log("Request files:", req.files);
-    
+
+    // Check if a file is uploaded
     if (!req.files || !req.files.displayPicture) {
-      console.log("No displayPicture file found in request");
       return res.status(400).json({
         success: false,
-        message: "No image file provided",
+        message: "No file uploaded",
       });
     }
-    
-    const displayPicture = req.files.displayPicture;
-    const userId = req.user.id;
-    
-    console.log("Uploading display picture for user:", userId);
-    console.log("File details:", {
-      name: displayPicture.name,
-      size: displayPicture.size,
-      mimetype: displayPicture.mimetype,
-      tempFilePath: displayPicture.tempFilePath
-    });
-    
-    try {
-      const image = await uploadImageToCloudinary(
-        displayPicture,
-        process.env.FOLDER_NAME,
-        1000,
-        1000
-      );
-      
-      console.log("Image uploaded successfully:", image.secure_url);
-      
-      const updatedProfile = await User.findByIdAndUpdate(
-        { _id: userId },
-        { image: image.secure_url },
-        { new: true }
-      );
-      
-      if (!updatedProfile) {
-        console.log("User not found with ID:", userId);
-        return res.status(404).json({
-          success: false,
-          message: "User not found",
-        });
-      }
-      
-      console.log("User profile updated successfully");
-      res.send({
-        success: true,
-        message: `Image Updated successfully`,
-        data: updatedProfile,
-      });
-    } catch (uploadError) {
-      console.error("Error during image upload or user update:", uploadError);
-      throw uploadError;
-    }
+
+    const displayPicture = req.files.displayPicture
+    const userId = req.user.id
+    //upload image to cloudinary
+    const image = await uploadImageToCloudinary(
+      displayPicture,
+      process.env.FOLDER_NAME,
+      1000,
+      1000
+    )
+    console.log(image)
+    const updatedProfile = await User.findByIdAndUpdate(
+      { _id: userId },
+      { image: image.secure_url },
+      { new: true }
+    )
+    res.send({
+      success: true,
+      message: `Image Updated successfully`,
+      data: updatedProfile,
+    })
   } catch (error) {
     console.error("Error updating display picture:", error);
     return res.status(500).json({
