@@ -5,6 +5,7 @@ import { Link } from "react-router-dom"
 // Image and Video Import
 import Banner from "../assets/Images/banner.mp4"
 // Component Imports
+import Quiz from "../components/common/Quiz"
 import Footer from "../components/common/Footer"
 import ReviewSlider from "../components/common/ReviewSlider"
 import CTAButton from "../components/core/HomePage/Button"
@@ -187,6 +188,13 @@ function Home() {
         </h1>
         <ReviewSlider />
       </div>
+{/* Quiz Section */}
+<div className="w-full mt-10 px-4">
+<h2 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
+  Test Your Knowledge
+</h2>
+  <Quiz />
+</div>
 
       {/* Footer */}
       <Footer />
