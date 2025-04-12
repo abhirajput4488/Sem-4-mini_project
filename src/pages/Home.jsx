@@ -190,8 +190,8 @@ function Home() {
       </div>
 {/* Quiz Section */}
 <div className="w-full mt-10 px-4">
-<h2 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
-  Test Your Knowledge
+<h2 className="mx-3 my-7 shadow-[10px_-5px_50px_-5px] shadow-blue-200  text-center text-4xl font-semibold text-yellow-25">
+  Test Your Knowledge 🚀🚀
 </h2>
   <Quiz />
 </div>
