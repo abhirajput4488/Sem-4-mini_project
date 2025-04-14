@@ -27,5 +27,8 @@
     "nodemon": "^2.0.22",
     "otp-generator": "^4.0.1",
     "razorpay": "^2.8.6"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }
