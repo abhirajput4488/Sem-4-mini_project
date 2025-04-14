@@ -27,7 +27,7 @@ function loadScript(src) {
 export async function buyCourse(token, courses, userDetails, navigate, dispatch) {
     const toastId = toast.loading("Loading...");
     try{
-        //load the script
+        // Load Razorpay checkout script
         const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
 
         if(!res) {
@@ -42,17 +42,21 @@ export async function buyCourse(token, courses, userDetails, navigate, dispatch)
                                     Authorization: `Bearer ${token}`,
                                 })
 
-        if(!orderResponse.data.success) {
-            throw new Error(orderResponse.data.message);
+        if (!orderResponse.data.success || !orderResponse.data.data) {
+            throw new Error(orderResponse.data.message || "Order creation failed");
         }
         console.log("PRINTING orderResponse", orderResponse);
+
+        const orderData = orderResponse.data.data;
+        console.log("RAZORPAY KEY:", process.env.REACT_APP_RAZORPAY_KEY); 
+
         //options
         const options = {
-            key: process.env.RAZORPAY_KEY,
-            currency: orderResponse.data.message.currency,
-            amount: `${orderResponse.data.message.amount}`,
-            order_id:orderResponse.data.message.id,
-            name:"StudyNotion",
+            key: process.env.REACT_APP_RAZORPAY_KEY,
+            currency: orderData.currency,
+            amount:  `${orderData.amount}`,
+            order_id:orderData.id,
+            name:"EduNexus",
             description: "Thank You for Purchasing the Course",
             image:rzpLogo,
             prefill: {
@@ -61,7 +65,7 @@ export async function buyCourse(token, courses, userDetails, navigate, dispatch)
             },
             handler: function(response) {
                 //send successful wala mail
-                sendPaymentSuccessEmail(response, orderResponse.data.message.amount,token );
+                sendPaymentSuccessEmail(response, orderData.amount,token );
                 //verifyPayment
                 verifyPayment({...response, courses}, token, navigate, dispatch);
             }

@@ -36,24 +36,42 @@ function ReviewSlider() {
   // console.log(reviews)
 
   return (
-    <div className="text-white">
-      <div className="my-[50px] h-[184px] max-w-maxContentTab lg:max-w-maxContent">
+    <div className="text-white w-full">
+      <div className="my-[50px] h-[250px] max-w-maxContentTab lg:max-w-maxContent">
         <Swiper
           slidesPerView={4}
-          spaceBetween={25}
+          spaceBetween={24}
           loop={true}
           freeMode={true}
           autoplay={{
             delay: 2500,
             disableOnInteraction: false,
           }}
+          breakpoints={{
+            300: {
+              slidesPerView: 1,
+              spaceBetween: 15
+            },
+            640: {
+              slidesPerView: 2,
+              spaceBetween: 20
+            },
+            768: {
+              slidesPerView: 3,
+              spaceBetween: 24
+            },
+            1024: {
+              slidesPerView: 4,
+              spaceBetween: 24
+            }
+          }}
           modules={[FreeMode, Pagination, Autoplay]}
-          className="w-full "
+          className="w-full h-full"
         >
           {reviews.map((review, i) => {
             return (
               <SwiperSlide key={i}>
-                <div className="flex flex-col gap-3 bg-richblack-800 p-3 text-[14px] text-richblack-25">
+                <div className="flex flex-col gap-3 bg-richblack-800 p-4 text-[14px] text-richblack-25 min-h-[180px] rounded-lg">
                   <div className="flex items-center gap-4">
                     <img
                       src={
@@ -62,7 +80,7 @@ function ReviewSlider() {
                           : `https://api.dicebear.com/5.x/initials/svg?seed=${review?.user?.firstName} ${review?.user?.lastName}`
                       }
                       alt=""
-                      className="h-9 w-9 rounded-full object-cover"
+                      className="h-12 w-12 rounded-full object-cover"
                     />
                     <div className="flex flex-col">
                       <h1 className="font-semibold text-richblack-5">{`${review?.user?.firstName} ${review?.user?.lastName}`}</h1>
@@ -79,7 +97,7 @@ function ReviewSlider() {
                           .join(" ")} ...`
                       : `${review?.review}`}
                   </p>
-                  <div className="flex items-center gap-2 ">
+                  <div className="flex items-center gap-2 mt-auto">
                     <h3 className="font-semibold text-yellow-100">
                       {review.rating.toFixed(1)}
                     </h3>

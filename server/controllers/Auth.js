@@ -8,6 +8,9 @@ const { passwordUpdated } = require("../mail/templates/passwordUpdate")
 const Profile = require("../models/Profile")
 require("dotenv").config()
 
+// Email validation regex
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // Signup Controller for Registering USers
 
 exports.signup = async (req, res) => { //✅
@@ -23,6 +26,15 @@ exports.signup = async (req, res) => { //✅
       contactNumber,
       otp,
     } = req.body
+
+    // Validate email format
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
+      })
+    }
+
     // Check if All Details are there or not
     if (
       !firstName ||
@@ -124,6 +136,14 @@ exports.login = async (req, res) => {//✅
   try {
     // Get email and password from request body
     const { email, password } = req.body
+
+    // Validate email format
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
+      })
+    }
 
     // Check if email or password is missing
     if (!email || !password) {

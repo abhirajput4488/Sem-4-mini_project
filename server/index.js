@@ -38,17 +38,16 @@ app.use(
 )
 
 app.use(
-  fileUpload({
-    useTempFiles: true,
-    tempFileDir: tempDir,
-    createParentPath: true,
-    limits: { fileSize: 50 * 1024 * 1024 },
-    abortOnLimit: true,
-    responseOnLimit: "File size limit has been reached",
-    debug: false // 🔕 Turn off noisy logs
-  })
-);
-
+	fileUpload({
+	  useTempFiles: true,
+	  tempFileDir: '/tmp/',
+	  abortOnLimit: true,
+	  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+	  createParentPath: true,
+	  debug: false,
+	})
+  );
+  
 //cloudinary connection
 cloudinaryConnect();
 
@@ -56,7 +55,7 @@ cloudinaryConnect();
 app.use("/api/v1/auth", userRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/course", courseRoutes);
-// app.use("/api/v1/payment", paymentRoutes);
+app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1/reach", contactUsRoute);
 
 //def route
