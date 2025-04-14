@@ -5,6 +5,7 @@ import { Link } from "react-router-dom"
 // Image and Video Import
 import Banner from "../assets/Images/banner.mp4"
 // Component Imports
+import CoverLetterGenerator from "../components/common/CoverLetterGenerator"
 import Quiz from "../components/common/Quiz"
 import Footer from "../components/common/Footer"
 import ReviewSlider from "../components/common/ReviewSlider"
@@ -195,7 +196,12 @@ function Home() {
 </h2>
   <Quiz />
 </div>
-
+<div>
+<h1 className="mx-3 my-7 shadow-[10px_-5px_50px_-5px] shadow-blue-200  text-center text-4xl font-semibold text-yellow-25">Welcome to the AI Cover Letter Generator</h1>
+      <CoverLetterGenerator />
+    </div>
+    
+    
       {/* Footer */}
       <Footer />
     </div>

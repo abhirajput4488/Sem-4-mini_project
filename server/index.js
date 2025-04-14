@@ -38,16 +38,17 @@ app.use(
 )
 
 app.use(
-	fileUpload({
-		useTempFiles: true,
-		tempFileDir: tempDir,
-		createParentPath: true,
-		limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max file size
-		abortOnLimit: true,
-		debug: true,
-		responseOnLimit: "File size limit has been reached"
-	})
-)
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: tempDir,
+    createParentPath: true,
+    limits: { fileSize: 50 * 1024 * 1024 },
+    abortOnLimit: true,
+    responseOnLimit: "File size limit has been reached",
+    debug: false // 🔕 Turn off noisy logs
+  })
+);
+
 //cloudinary connection
 cloudinaryConnect();
 
