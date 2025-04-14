@@ -7,7 +7,7 @@ const { uploadImageToCloudinary } = require("../utils/imageUploader")
 const CourseProgress = require("../models/CourseProgress")
 const { convertSecondsToDuration } = require("../utils/secToDuration")
 // Function to create a new course
-exports.createCourse = async (req, res) => {
+exports.createCourse = async (req, res) => {//✅
   try {
     // Get user ID from request object
     const userId = req.user.id
@@ -24,21 +24,43 @@ exports.createCourse = async (req, res) => {
       instructions: _instructions,
     } = req.body
     // Get thumbnail image from request files
-    const thumbnail = req.files.thumbnailImage
-    console.log("Received files:", req.files)
-    console.log("Thumbnail details:", {
-      name: thumbnail?.name,
-      size: thumbnail?.size,
-      mimetype: thumbnail?.mimetype,
-      tempFilePath: thumbnail?.tempFilePath
-    })
+    const thumbnail = req.files?.thumbnailImage
+
 
     // Convert the tag and instructions from stringified Array to Array
-    const tag = JSON.parse(_tag)
-    const instructions = JSON.parse(_instructions)
+    // const tag = JSON.parse(_tag)  //unsafe
+    // const instructions = JSON.parse(_instructions)
 
-    console.log("tag", tag)
-    console.log("instructions", instructions)
+    // Safely parse tag
+    let tag = []
+    try {
+      tag = _tag ? JSON.parse(_tag) : []
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid tag format. Must be a valid JSON array.",
+      })
+    }
+
+    // Safely parse instructions
+    let instructions = []
+    try {
+      instructions = _instructions ? JSON.parse(_instructions) : []
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid instructions format. Must be a valid JSON array.",
+      })
+    }
+
+  console.log("courseName:", courseName)
+  console.log("courseDescription:", courseDescription)
+  console.log("whatYouWillLearn:", whatYouWillLearn)
+  console.log("price:", price)
+  console.log("tag:", tag)
+  console.log("thumbnail:", thumbnail)
+  console.log("category:", category)
+  console.log("instructions:", instructions)
 
     // Check if any of the required fields are missing
     if (
@@ -112,16 +134,12 @@ exports.createCourse = async (req, res) => {
       { new: true }
     )
     // Add the new course to the Categories
-    const categoryDetails2 = await Category.findByIdAndUpdate(
-      { _id: category },
-      {
-        $push: {
-          courses: newCourse._id,
-        },
-      },
+    await Category.findByIdAndUpdate(
+      category,
+      { $push: { courses: newCourse._id } },
       { new: true }
     )
-    console.log("HEREEEEEEEE", categoryDetails2)
+
     // Return the new course and a success message
     res.status(200).json({
       success: true,
@@ -139,7 +157,7 @@ exports.createCourse = async (req, res) => {
   }
 }
 // Edit Course Details
-exports.editCourse = async (req, res) => {
+exports.editCourse = async (req, res) => {//✅
   try {
     const { courseId } = req.body
     const updates = req.body
@@ -207,10 +225,10 @@ exports.editCourse = async (req, res) => {
   }
 }
 // Get Course List
-exports.getAllCourses = async (req, res) => {
+exports.getAllCourses = async (req, res) => {//✅
   try {
     const allCourses = await Course.find(
-      { status: "Published" },
+      { status: "Published" }, //to check ->Draft
       {
         courseName: true,
         price: true,
@@ -288,7 +306,7 @@ exports.getAllCourses = async (req, res) => {
 //     })
 //   }
 // }
-exports.getCourseDetails = async (req, res) => {
+exports.getCourseDetails = async (req, res) => {//✅
   try {
     const { courseId } = req.body
     const courseDetails = await Course.findOne({
@@ -349,7 +367,7 @@ exports.getCourseDetails = async (req, res) => {
     })
   }
 }
-exports.getFullCourseDetails = async (req, res) => {
+exports.getFullCourseDetails = async (req, res) => {//✅
   try {
     const { courseId } = req.body
     const userId = req.user.id
@@ -422,7 +440,7 @@ exports.getFullCourseDetails = async (req, res) => {
 }
 
 // Get a list of Course for a given Instructor
-exports.getInstructorCourses = async (req, res) => {
+exports.getInstructorCourses = async (req, res) => {//✅
   try {
     // Get the instructor ID from the authenticated user or request body
     const instructorId = req.user.id

@@ -4,7 +4,7 @@ const SubSection = require("../models/SubSection")
 const { uploadImageToCloudinary } = require("../utils/imageUploader")
 
 // Create a new sub-section for a given section
-exports.createSubSection = async (req, res) => {
+exports.createSubSection = async (req, res) => {//✅
   try {
     // Extract necessary information from the request body
     const { sectionId, title, description } = req.body
@@ -52,7 +52,7 @@ exports.createSubSection = async (req, res) => {
   }
 }
 
-exports.updateSubSection = async (req, res) => {
+exports.updateSubSection = async (req, res) => {//✅
   try {
     const { sectionId, subSectionId, title, description } = req.body
     const subSection = await SubSection.findById(subSectionId)
@@ -104,7 +104,7 @@ exports.updateSubSection = async (req, res) => {
   }
 }
 
-exports.deleteSubSection = async (req, res) => {
+exports.deleteSubSection = async (req, res) => {//✅
   try {
     const { subSectionId, sectionId } = req.body
     await Section.findByIdAndUpdate(
