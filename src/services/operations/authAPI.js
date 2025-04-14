@@ -14,8 +14,21 @@ const {
   RESETPASSWORD_API,
 } = endpoints
 
+// Email validation regex
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Validate email format
+const validateEmail = (email) => {
+  return emailRegex.test(email);
+}
+
 export function sendOtp(email, navigate) {
   return async (dispatch) => {
+    if (!validateEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     const toastId = toast.loading("Loading...")
     dispatch(setLoading(true))
     try {
@@ -35,7 +48,7 @@ export function sendOtp(email, navigate) {
       navigate("/verify-email")
     } catch (error) {
       console.log("SENDOTP API ERROR............", error)
-      toast.error("Could Not Send OTP")
+      toast.error(error.message || "Could Not Send OTP")
     }
     dispatch(setLoading(false))
     toast.dismiss(toastId)
@@ -53,6 +66,11 @@ export function signUp(
   navigate
 ) {
   return async (dispatch) => {
+    if (!validateEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     const toastId = toast.loading("Loading...")
     dispatch(setLoading(true))
     try {
@@ -75,8 +93,7 @@ export function signUp(
       navigate("/login")
     } catch (error) {
       console.log("SIGNUP API ERROR............", error)
-      toast.error("Signup Failed")
-      navigate("/signup")
+      toast.error(error.message || "Signup Failed")
     }
     dispatch(setLoading(false))
     toast.dismiss(toastId)
@@ -85,6 +102,11 @@ export function signUp(
 
 export function login(email, password, navigate) {
   return async (dispatch) => {
+    if (!validateEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     const toastId = toast.loading("Loading...")
     dispatch(setLoading(true))
     try {
@@ -95,26 +117,65 @@ export function login(email, password, navigate) {
 
       console.log("LOGIN API RESPONSE............", response)
 
-      if (!response.data.success) {
-        throw new Error(response.data.message)
+      // First check if we have a response
+      if (!response?.data) {
+        throw new Error("Could not connect to server")
       }
 
+      // Check for unsuccessful login attempts
+      if (!response.data.success) {
+        const errorMessage = response.data.message;
+        // Check specific error messages from backend
+        if (errorMessage.includes("not Registered")) {
+          throw new Error("User not registered. Please signup first.")
+        } else if (errorMessage.includes("Password is incorrect")) {
+          throw new Error("Invalid password. Please try again.")
+        } else {
+          throw new Error(errorMessage || "Login failed")
+        }
+      }
+
+      // Verify user data and token exist
+      const userData = response.data.user
+      const token = response.data.token
+      if (!userData || !token) {
+        throw new Error("Login failed - invalid password or email not registered")
+      }
+
+      // Login successful
       toast.success("Login Successful")
-      dispatch(setToken(response.data.token))
-      const userImage = response.data?.user?.image
-        ? response.data.user.image
-        : `https://api.dicebear.com/5.x/initials/svg?seed=${response.data.user.firstName} ${response.data.user.lastName}`
-      dispatch(setUser({ ...response.data.user, image: userImage }))
       
-      localStorage.setItem("token", JSON.stringify(response.data.token))
-      localStorage.setItem("user", JSON.stringify(response.data.user))
+      // Set user data and token
+      dispatch(setToken(token))
+      
+      // Safely create image URL
+      const userImage = userData.image || 
+        (userData.firstName && userData.lastName 
+          ? `https://api.dicebear.com/5.x/initials/svg?seed=${userData.firstName} ${userData.lastName}`
+          : `https://api.dicebear.com/5.x/initials/svg?seed=User`)
+      
+      dispatch(setUser({ ...userData, image: userImage }))
+      
+      // Save to localStorage
+      localStorage.setItem("token", JSON.stringify(token))
+      localStorage.setItem("user", JSON.stringify(userData))
+      
+      // Navigate to dashboard
       navigate("/dashboard/my-profile")
     } catch (error) {
       console.log("LOGIN API ERROR............", error)
-      toast.error("Login Failed")
+      // Clear any existing auth data
+      dispatch(setToken(null))
+      dispatch(setUser(null))
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      
+      // Show specific error message
+      toast.error(error.message)
+    } finally {
+      dispatch(setLoading(false))
+      toast.dismiss(toastId)
     }
-    dispatch(setLoading(false))
-    toast.dismiss(toastId)
   }
 }
 
@@ -130,50 +191,82 @@ export function logout(navigate) {
   }
 }
 
-
-
-export function getPasswordResetToken(email , setEmailSent) {
+export function getPasswordResetToken(email, setEmailSent) {
   return async(dispatch) => {
+    if (!validateEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     dispatch(setLoading(true));
-    try{
-      const response = await apiConnector("POST", RESETPASSTOKEN_API, {email,})
+    try {
+      const response = await apiConnector("POST", RESETPASSTOKEN_API, {email});
 
       console.log("RESET PASSWORD TOKEN RESPONSE....", response);
 
-      if(!response.data.success) {
-        throw new Error(response.data.message);
+      if (!response?.data) {
+        throw new Error("Could not connect to server")
       }
 
-      toast.success("Reset Email Sent");
+      if(!response.data.success) {
+        const errorMessage = response.data.message;
+        if (errorMessage.includes("not Registered")) {
+          throw new Error("Email not registered. Please signup first.")
+        } else {
+          throw new Error(errorMessage || "Failed to send reset email")
+        }
+      }
+
+      toast.success("Reset email sent successfully");
       setEmailSent(true);
     }
     catch(error) {
       console.log("RESET PASSWORD TOKEN Error", error);
-      toast.error("Failed to send email for resetting password");
+      toast.error(error.message || "Failed to send reset email");
+      setEmailSent(false);
     }
-    dispatch(setLoading(false));
+    finally {
+      dispatch(setLoading(false));
+    }
   }
 }
 
 export function resetPassword(password, confirmPassword, token) {
   return async(dispatch) => {
     dispatch(setLoading(true));
-    try{
-      const response = await apiConnector("POST", RESETPASSWORD_API, {password, confirmPassword, token});
+    try {
+      if (!password || !confirmPassword) {
+        throw new Error("Please fill in both password fields")
+      }
+
+      if (password !== confirmPassword) {
+        throw new Error("Passwords do not match")
+      }
+
+      const response = await apiConnector("POST", RESETPASSWORD_API, {
+        password, 
+        confirmPassword, 
+        token
+      });
 
       console.log("RESET Password RESPONSE ... ", response);
 
+      if (!response?.data) {
+        throw new Error("Could not connect to server")
+      }
 
       if(!response.data.success) {
-        throw new Error(response.data.message);
+        throw new Error(response.data.message || "Failed to reset password")
       }
 
       toast.success("Password has been reset successfully");
     }
     catch(error) {
-      console.log("RESET PASSWORD TOKEN Error", error);
-      toast.error("Unable to reset password");
+      console.log("RESET PASSWORD Error", error);
+      toast.error(error.message || "Failed to reset password");
     }
-    dispatch(setLoading(false));
+    finally {
+      dispatch(setLoading(false));
+    }
   }
 }
