@@ -31,6 +31,7 @@ import Instructor from "./components/core/Dashboard/InstructorDashboard/Instruct
 import VideoDetails from "./components/core/ViewCourse/VideoDetails";
 import CoverLetter from "./components/core/Dashboard/CoverLetter";
 import MyQuiz from "./components/core/Dashboard/MyQuiz";
+import QuizResult from "./components/core/Dashboard/QuizResult";
 
 import { ACCOUNT_TYPE } from "./utils/constants";
 
@@ -107,6 +108,7 @@ function App() {
               <Route path="dashboard/enrolled-courses" element={<EnrolledCourses />} />
               <Route path="dashboard/cover-letter" element={<CoverLetter />} />
               <Route path="dashboard/quiz" element={<MyQuiz />} />
+              <Route path="dashboard/quiz-results" element={<QuizResult />} />
             </>
           )}
 

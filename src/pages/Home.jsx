@@ -5,8 +5,6 @@ import { Link } from "react-router-dom"
 // Image and Video Import
 import Banner from "../assets/Images/banner.mp4"
 // Component Imports
-import CoverLetterGenerator from "../components/common/CoverLetterGenerator"
-import Quiz from "../components/common/Quiz"
 import Footer from "../components/common/Footer"
 import ReviewSlider from "../components/common/ReviewSlider"
 import CTAButton from "../components/core/HomePage/Button"
@@ -160,7 +158,7 @@ function Home() {
             </div>
             <div className="flex flex-col items-start gap-10 lg:w-[40%]">
               <div className="text-[16px]">
-                The modern StudyNotion is the dictates its own terms. Today, to
+                The modern EduNexus is the dictates its own terms. Today, to
                 be a competitive specialist requires more than professional
                 skills.
               </div>
@@ -189,20 +187,9 @@ function Home() {
         </h1>
         <ReviewSlider />
       </div>
-{/* Quiz Section */}
-<div className="w-full mt-10 px-4">
-<h2 className="mx-3 my-7 shadow-[10px_-5px_50px_-5px] shadow-blue-200  text-center text-4xl font-semibold text-yellow-25">
-  Test Your Knowledge 🚀🚀
-</h2>
-  <Quiz />
-</div>
 <div>
-<h1 className="mx-3 my-7 shadow-[10px_-5px_50px_-5px] shadow-blue-200  text-center text-4xl font-semibold text-yellow-25">Welcome to the AI Cover Letter Generator</h1>
-      <CoverLetterGenerator />
     </div>
-    
-    
-      {/* Footer */}
+     {/* Footer */}
       <Footer />
     </div>
   )

@@ -1,14 +1,12 @@
 import React from 'react'
-
-import {Swiper, SwiperSlide} from "swiper/react"
+import { Swiper, SwiperSlide } from 'swiper/react'
 import "swiper/css"
 import "swiper/css/free-mode"
 import "swiper/css/pagination"
-import { Autoplay,FreeMode,Navigation, Pagination}  from 'swiper'
-
+import { FreeMode, Pagination } from 'swiper'
 import Course_Card from './Course_Card'
 
-const CourseSlider = ({Courses}) => {
+const CourseSlider = ({ Courses }) => {
   return (
     <>
       {Courses?.length ? (
@@ -21,6 +19,9 @@ const CourseSlider = ({Courses}) => {
             1024: {
               slidesPerView: 3,
             },
+            768: {
+              slidesPerView: 2,
+            }
           }}
           className="max-h-[30rem]"
         >
@@ -31,10 +32,7 @@ const CourseSlider = ({Courses}) => {
           ))}
         </Swiper>
       ) : (
-        <div className="text-center py-8">
-          <p className="text-xl text-richblack-5">No Courses Available</p>
-          <p className="text-richblack-200 mt-2">Check back later for new courses in this category.</p>
-        </div>
+        <p className="text-xl text-richblack-5">No courses found</p>
       )}
     </>
   )
