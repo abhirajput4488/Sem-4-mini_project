@@ -68,8 +68,25 @@ const userSchema = new mongoose.Schema(
 				ref: "courseProgress",
 			},
 		],
-
-		// Add timestamps for when the document is created and last modified
+		// Add instructor statistics
+		instructorStats: {
+			totalStudents: {
+				type: Number,
+				default: 0
+			},
+			totalCourses: {
+				type: Number,
+				default: 0
+			},
+			totalIncome: {
+				type: Number,
+				default: 0
+			},
+			lastUpdated: {
+				type: Date,
+				default: Date.now
+			}
+		}
 	},
 	{ timestamps: true }
 );

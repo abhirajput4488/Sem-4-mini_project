@@ -21,19 +21,26 @@ function Navbar() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    ;(async () => {
+    const fetchCategories = async () => {
       setLoading(true)
       try {
-        const res = await apiConnector("GET", categories.CATEGORIES_API)
-        setSubLinks(res.data.data)
+        const response = await apiConnector("GET", categories.CATEGORIES_API)
+        console.log("Categories response:", response)
+        if (response?.data?.success) {
+          // Filter out categories with no courses if needed
+          const categoriesData = response.data.data
+          setSubLinks(categoriesData)
+        }
       } catch (error) {
-        console.log("Could not fetch Categories.", error)
+        console.error("Could not fetch Categories.", error)
+        setSubLinks([]) // Reset to empty array on error
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
-    })()
-  }, [])
+    }
 
-  // console.log("sub links", subLinks)
+    fetchCategories()
+  }, [])
 
   const matchRoute = (route) => {
     return matchPath({ path: route }, location.pathname)
@@ -70,27 +77,20 @@ function Navbar() {
                         <div className="absolute left-[50%] top-0 -z-10 h-6 w-6 translate-x-[80%] translate-y-[-40%] rotate-45 select-none rounded bg-richblack-5"></div>
                         {loading ? (
                           <p className="text-center">Loading...</p>
-                        ) : (subLinks && subLinks.length) ? (
+                        ) : subLinks?.length > 0 ? (
                           <>
-                            {subLinks
-                              ?.filter(
-                                (subLink) => subLink?.courses?.length > 0
-                              )
-                              ?.map((subLink, i) => (
-                                <Link
-                                  to={`/catalog/${subLink.name
-                                    .split(" ")
-                                    .join("-")
-                                    .toLowerCase()}`}
-                                  className="rounded-lg bg-transparent py-4 pl-4 hover:bg-richblack-50"
-                                  key={i}
-                                >
-                                  <p>{subLink.name}</p>
-                                </Link>
-                              ))}
+                            {subLinks.map((category, i) => (
+                              <Link
+                                to={`/catalog/${category.name.replace(/\s+/g, '-').toLowerCase()}`}
+                                className="rounded-lg bg-transparent py-4 pl-4 hover:bg-richblack-50"
+                                key={i}
+                              >
+                                <p>{category.name}</p>
+                              </Link>
+                            ))}
                           </>
                         ) : (
-                          <p className="text-center">No Courses Found</p>
+                          <p className="text-center">No Categories Found</p>
                         )}
                       </div>
                     </div>

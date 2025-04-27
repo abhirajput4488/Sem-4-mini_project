@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { apiConnector } from "../../../services/apiconnector";
+
 
 export default function Quiz() {
+  const navigate = useNavigate();
+  const { token } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.profile);
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState('easy');
-  const [numQuestions, setNumQuestions] = useState(5);
+  const [numQuestions, setNumQuestions] = useState(0);
   const [questions, setQuestions] = useState([]);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState({});
@@ -11,34 +19,126 @@ export default function Quiz() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [currentQ, setCurrentQ] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [isQuizCompleted, setIsQuizCompleted] = useState(false);
+
 
   const letterToIndex = (letter) => {
     return { A: 0, B: 1, C: 2, D: 3 }[letter?.toUpperCase()] ?? -1;
   };
 
+  
+  // Function to check authentication
+  const checkAuth = () => {
+    if (!token || !user) {
+      toast.error("Please login to save quiz results");
+      navigate("/login");
+      return false;
+    }
+    return true;
+  };
+
+  // Reset quiz states
+  const resetQuizStates = () => {
+    setTopic('');
+    setDifficulty('easy');
+    setNumQuestions(5);
+    setQuestions([]);
+    setScore(0);
+    setAnswered({});
+    setCurrentQ(0);
+    setShowExplanation(false);
+    setSelectedOption(null);
+    setIsQuizCompleted(false);
+    setLoading(false);
+  };
+
+  // Save quiz result to backend
+  const saveQuizResult = async () => {
+    if (!checkAuth()) return;
+  
+    try {
+      console.log("Saving quiz with data:", {
+        topic,
+        totalQuestions: questions.length,
+        correctAnswers: score,
+        wrongAnswers: questions.length - score,
+      });
+  
+      const response = await apiConnector(
+        "POST",
+        `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/v1/quiz/save`,
+        {
+          topic: topic,
+          totalQuestions: questions.length,
+          correctAnswers: score,
+          wrongAnswers: questions.length - score,
+        },
+        {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
+      );
+  
+      console.log("Save quiz response:", response);
+  
+      if (response?.data?.success) {
+        toast.success("Quiz result saved successfully!");
+        console.log("✅ Quiz results saved successfully");
+      } else {
+        throw new Error(response?.data?.message || "Failed to save quiz result");
+      }
+    } catch (error) {
+      console.error("Error details:", error.response || error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again");
+        navigate("/login");
+      } else {
+        toast.error(error.response?.data?.message || "Something went wrong");
+      }
+    }
+  };
+  
+
+  // Effect to save quiz results
+  useEffect(() => {
+    const allQuestionsAnswered = questions.length > 0 && Object.keys(answered).length === questions.length;
+    
+    if (allQuestionsAnswered && !isQuizCompleted) {
+      console.log("All questions answered, saving result...");
+      setIsQuizCompleted(true);
+      saveQuizResult();
+    }
+  }, [answered, questions.length, isQuizCompleted]);
+
+
+  // Generate quiz
   const generateQuiz = async () => {
     if (!topic || numQuestions < 1 || numQuestions > 50) {
-      alert("Enter a topic and number of questions between 1 and 50.");
+      toast.error("Enter a topic and number of questions between 1 and 50.");
       return;
     }
 
+    // Reset states before generating new quiz
     setScore(0);
     setAnswered({});
     setQuestions([]);
     setCurrentQ(0);
     setShowExplanation(false);
     setSelectedOption(null);
+    setIsQuizCompleted(false);
     setLoading(true);
 
-    const res = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyBPfcTRI-4tU4QGOHEQB2CZ6ObnKmJCzIk',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `Generate a ${difficulty} quiz with ${numQuestions} multiple-choice questions on the topic: "${topic}". Each question must include:
+    try {
+      const res = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyBPfcTRI-4tU4QGOHEQB2CZ6ObnKmJCzIk',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `Generate a ${difficulty} quiz with ${numQuestions} multiple-choice questions on the topic: "${topic}". Each question must include:
 - A clear question
 - Four options (A-D)
 - One correct answer
@@ -52,17 +152,22 @@ C. Option
 D. Option
 Answer: B
 Explanation: Because...`
+              }]
             }]
-          }]
-        })
-      }
-    );
+          })
+        }
+      );
 
-    const data = await res.json();
-    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    const parsedQuestions = parseQuestions(responseText);
-    setQuestions(parsedQuestions);
-    setLoading(false);
+      const data = await res.json();
+      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const parsedQuestions = parseQuestions(responseText);
+      setQuestions(parsedQuestions);
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+      toast.error("Failed to generate quiz. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const parseQuestions = (text) => {
@@ -105,14 +210,27 @@ Explanation: Because...`
   };
 
   const restartQuiz = () => {
-    setTopic('');
-    setDifficulty('easy');
-    setQuestions([]);
-    setScore(0);
-    setCurrentQ(0);
-    setAnswered({});
-    setShowExplanation(false);
-    setSelectedOption(null);
+    resetQuizStates();
+    toast.success("Quiz reset! Ready for a new topic.");
+  };
+
+  const handleAnswer = (qIndex, selectedIndex) => {
+    if (answered[qIndex]) return;
+
+    const correctIndex = letterToIndex(questions[qIndex].answer);
+    const isCorrect = selectedIndex === correctIndex;
+
+    if (isCorrect) {
+      setScore((prev) => prev + 1);
+    }
+
+    setAnswered((prev) => ({
+      ...prev,
+      [qIndex]: {
+        selected: selectedIndex,
+        correct: correctIndex,
+      },
+    }));
   };
 
   const correctAnswers = Object.values(answered).filter((a) => a.selected === a.correct).length;
@@ -170,17 +288,26 @@ Explanation: Because...`
                 <option value="hard">Hard</option>
               </select>
             </div>
-            <button
-              onClick={generateQuiz}
-              disabled={loading}
-              className={`w-full text-white font-bold py-3 rounded-lg transition-all duration-300 ${
-                loading
-                  ? "bg-gray-500 cursor-not-allowed"
-                  : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 hover:scale-105"
-              }`}
-            >
-              {loading ? "⏳ Generating Quiz..." : "🚀 Start Quiz"}
-            </button>
+            <div className="space-y-4">
+              <button
+                onClick={generateQuiz}
+                disabled={loading}
+                className={`w-full text-white font-bold py-3 rounded-lg transition-all duration-300 ${
+                  loading
+                    ? "bg-gray-500 cursor-not-allowed"
+                    : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 hover:scale-105"
+                }`}
+              >
+                {loading ? "⏳ Generating Quiz..." : "🚀 Start Quiz"}
+              </button>
+
+              <button
+                onClick={() => navigate("/dashboard/quiz-results")}
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 hover:scale-105"
+              >
+                📊 View Quiz Performance
+              </button>
+            </div>
           </div>
         )}
 
@@ -255,21 +382,29 @@ Explanation: Because...`
         )}
 
         {questions.length > 0 && currentQ === questions.length && (
-         <div className="text-center mt-12 p-8 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-500 backdrop-blur-lg rounded-xl shadow-2xl space-y-6 animate-zoom-in">
-         <h2 className="text-4xl font-extrabold text-white tracking-wide">🎉 Quiz Completed!</h2>
-         <p className="text-xl text-white/80">📚 Topic: <strong className="text-white">{topic}</strong></p>
-         <p className="text-xl text-white/80">📈 Difficulty: <strong className="text-white">{difficulty}</strong></p>
-         <p className="text-xl text-white/80">✅ Correct Answers: <strong className="text-green-400">{correctAnswers} / {questions.length}</strong></p>
-         <p className="text-xl font-semibold text-yellow-300">🎯 Your Score: <strong>{score} / {questions.length}</strong></p>
-       
-         <button
-           onClick={restartQuiz}
-           className="bg-yellow-400 text-black font-semibold px-8 py-3 rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 hover:bg-yellow-500"
-         >
-           🔁 Restart Quiz
-         </button>
-       </div>
-       
+          <div className="text-center mt-12 p-8 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-500 backdrop-blur-lg rounded-xl shadow-2xl space-y-6 animate-zoom-in">
+            <h2 className="text-4xl font-extrabold text-white tracking-wide">🎉 Quiz Completed!</h2>
+            <p className="text-xl text-white/80">📚 Topic: <strong className="text-white">{topic}</strong></p>
+            <p className="text-xl text-white/80">📈 Difficulty: <strong className="text-white">{difficulty}</strong></p>
+            <p className="text-xl text-white/80">✅ Correct Answers: <strong className="text-green-400">{correctAnswers} / {questions.length}</strong></p>
+            <p className="text-xl font-semibold text-yellow-300">🎯 Your Score: <strong>{score} / {questions.length}</strong></p>
+            
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={restartQuiz}
+                className="bg-yellow-400 text-black font-semibold px-8 py-3 rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 hover:bg-yellow-500"
+              >
+                🔁 Restart Quiz
+              </button>
+              
+              <button
+                onClick={() => navigate("/dashboard/quiz-results")}
+                className="bg-emerald-400 text-black font-semibold px-8 py-3 rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 hover:bg-emerald-500"
+              >
+                📊 Quiz Performance
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

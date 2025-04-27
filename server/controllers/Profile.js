@@ -249,22 +249,34 @@ exports.instructorDashboard = async (req, res) => {
       });
     }
 
+    // Find instructor with their stats
+    const instructor = await User.findById(instructorId)
+      .select('instructorStats')
+      .lean();
+
     // Find all courses for this instructor with populated fields
     const courseDetails = await Course.find({ instructor: instructorId })
-      .populate('studentsEnroled')
-      .lean(); // Use lean() for better performance
+      .populate('studentsEnrolled')
+      .lean();
 
-    if (!courseDetails || courseDetails.length === 0) {
+    if (!courseDetails) {
       return res.status(200).json({
         success: true,
-        data: []
+        data: {
+          stats: instructor.instructorStats || {
+            totalStudents: 0,
+            totalCourses: 0,
+            totalIncome: 0
+          },
+          courses: []
+        }
       });
     }
 
     const courseData = courseDetails.map((course) => {
-      // Ensure studentsEnroled exists and is an array
-      const studentsEnroled = Array.isArray(course.studentsEnroled) ? course.studentsEnroled : [];
-      const totalStudentsEnrolled = studentsEnroled.length;
+      // Ensure studentsEnrolled exists and is an array
+      const studentsEnrolled = Array.isArray(course.studentsEnrolled) ? course.studentsEnrolled : [];
+      const totalStudentsEnrolled = studentsEnrolled.length;
       const price = typeof course.price === 'number' ? course.price : 0;
       const totalAmountGenerated = totalStudentsEnrolled * price;
 
@@ -279,9 +291,23 @@ exports.instructorDashboard = async (req, res) => {
       };
     });
 
+    // Calculate total stats from courses if instructor stats are not available
+    const stats = instructor.instructorStats || {
+      totalStudents: courseDetails.reduce((total, course) => 
+        total + (Array.isArray(course.studentsEnrolled) ? course.studentsEnrolled.length : 0), 0),
+      totalCourses: courseDetails.length,
+      totalIncome: courseDetails.reduce((total, course) => {
+        const studentsCount = Array.isArray(course.studentsEnrolled) ? course.studentsEnrolled.length : 0;
+        return total + (studentsCount * (course.price || 0));
+      }, 0)
+    };
+
     res.status(200).json({
       success: true,
-      data: courseData
+      data: {
+        stats,
+        courses: courseData
+      }
     });
   } catch (error) {
     console.error("Error in instructorDashboard:", error);

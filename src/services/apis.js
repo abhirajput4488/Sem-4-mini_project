@@ -9,6 +9,17 @@ export const endpoints = {
   RESETPASSWORD_API: BASE_URL + "/auth/reset-password",
 }
 
+// CATEGORIES API
+export const categories = {
+  CATEGORIES_API: BASE_URL + "/course/showAllCategories",
+}
+
+// QUIZ ENDPOINTS
+export const quizEndpoints = {
+  SAVE_QUIZ_RESULT: BASE_URL + "/quiz/save",
+  GET_QUIZ_RESULTS: BASE_URL + "/quiz/results",
+}
+
 // PROFILE ENDPOINTS
 export const profileEndpoints = {
   GET_USER_DETAILS_API: BASE_URL + "/profile/getUserDetails",
@@ -49,15 +60,12 @@ export const ratingsEndpoints = {
   REVIEWS_DETAILS_API: BASE_URL + "/course/getReviews",
 }
 
-// CATAGORIES API
-export const categories = {
+// CATALOG ENDPOINTS
+export const catalogData = {
+  CATALOGPAGEDATA_API: BASE_URL + "/course/getCategoryPageDetails",
   CATEGORIES_API: BASE_URL + "/course/showAllCategories",
 }
 
-// CATALOG PAGE DATA
-export const catalogData = {
-  CATALOGPAGEDATA_API: BASE_URL + "/course/getCategoryPageDetails",
-}
 // CONTACT-US API
 export const contactusEndpoint = {
   CONTACT_US_API: BASE_URL + "/reach/contact",

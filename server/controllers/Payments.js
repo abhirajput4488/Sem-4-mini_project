@@ -11,6 +11,36 @@ const { paymentSuccessEmail } = require("../mail/templates/paymentSuccessEmail")
 const CourseProgress = require("../models/CourseProgress")
 const jwt = require("jsonwebtoken")
 
+// Update instructor statistics
+const updateInstructorStats = async (instructorId, coursePrice) => {
+  try {
+    const instructor = await User.findById(instructorId);
+    if (!instructor) {
+      console.log("Instructor not found");
+      return;
+    }
+
+    // Initialize statistics if they don't exist
+    if (!instructor.instructorStats) {
+      instructor.instructorStats = {
+        totalStudents: 0,
+        totalCourses: 0,
+        totalIncome: 0,
+      };
+    }
+
+    // Update statistics
+    instructor.instructorStats.totalStudents += 1;
+    instructor.instructorStats.totalIncome += coursePrice;
+
+    // Save the updated instructor
+    await instructor.save();
+    console.log("Instructor stats updated successfully");
+  } catch (error) {
+    console.error("Error updating instructor stats:", error);
+  }
+};
+
 // Capture the payment and initiate the Razorpay order
 exports.capturePayment = async (req, res) => {
   const { courses } = req.body
@@ -155,7 +185,7 @@ const enrollStudents = async (courses, userId, res) => {
         { _id: courseId },
         { $push: { studentsEnrolled: userId } },
         { new: true }
-      )
+      ).populate('instructor');
 
       if (!enrolledCourse) {
         return res
@@ -163,6 +193,9 @@ const enrollStudents = async (courses, userId, res) => {
           .json({ success: false, error: "Course not found" })
       }
       console.log("Updated course: ", enrolledCourse)
+
+      // Update instructor statistics
+      await updateInstructorStats(enrolledCourse.instructor._id, enrolledCourse.price);
 
       const courseProgress = await CourseProgress.create({
         courseID: courseId,
