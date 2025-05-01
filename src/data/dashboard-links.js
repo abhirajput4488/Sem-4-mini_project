@@ -55,4 +55,11 @@ export const sidebarLinks = [
     type: ACCOUNT_TYPE.STUDENT,
     icon: "VscHistory",
   },
+  {
+  id: 9,
+  name: "ResumeBuilder",
+  path: "/dashboard/resume-builder",
+  type: ACCOUNT_TYPE.STUDENT,
+  icon: "VscHistory",
+  },
 ];
