@@ -239,7 +239,7 @@ Explanation: Because...`
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-violet-900 to-slate-900 text-white p-6">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-5xl font-extrabold text-center mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-pink-500 drop-shadow-lg animate-pulse">
-          ✨ Smart Quiz App
+          ✨ Personalized Learning Quiz System
         </h1>
 
         {questions.length > 0 && (
