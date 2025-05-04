@@ -3,9 +3,6 @@ import { FaArrowRight } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 
 import Banner from '../assets/Images/banner.mp4'
-import CoverLetterGenerator from '../components/common/CoverLetterGenerator'
-import ResumeBuilder from '../components/common/ResumeBuilder'  // <<< New import
-import Quiz from '../components/common/Quiz'
 import Footer from '../components/common/Footer'
 import ReviewSlider from '../components/common/ReviewSlider'
 import CTAButton from '../components/core/HomePage/Button'
@@ -177,31 +174,6 @@ function Home() {
         </h1>
         <ReviewSlider />
       </div>
-
-      {/* Quiz Section */}
-      <div className="w-full mt-10 px-4">
-        <h2 className="mx-3 my-7 shadow-[10px_-5px_50px_-5px] shadow-blue-200 text-center text-4xl font-semibold text-yellow-25">
-          Test Your Knowledge 🚀🚀
-        </h2>
-        <Quiz />
-      </div>
-
-      {/* Cover Letter Generator Section */}
-      <div>
-        <h1 className="mx-3 my-7 shadow-[10px_-5px_50px_-5px] shadow-blue-200 text-center text-4xl font-semibold text-yellow-25">
-          Welcome to the AI Cover Letter Generator
-        </h1>
-        <CoverLetterGenerator />
-      </div>
-
-      {/* Resume Generator Section */}
-      <div>
-        <h1 className="mx-3 my-7 shadow-[10px_-5px_50px_-5px] shadow-pink-200 text-center text-4xl font-semibold text-caribbeangreen-100">
-          Build Your Professional Resume
-        </h1>
-        <ResumeBuilder />
-      </div>
-
       {/* Footer */}
       <Footer />
     </div>
